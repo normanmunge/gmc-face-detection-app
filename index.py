@@ -5,7 +5,11 @@ import streamlit as st
 
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default .xml') #a pre-trained model that can be used to detect faces in images and videos
 
-def detect_faces():
+
+def hex_to_rbg(hex):
+    return tuple(int(hex[i:i+2], 16) for i in (0,2, 4))
+    
+def detect_faces(hex_color):
     
     # Initialize the web cam
     cap = cv2.VideoCapture(0)
@@ -16,6 +20,10 @@ def detect_faces():
         cap.release()
         exit()
     
+    # Set the color to draw the rectangle around the detected faces
+    color = hex_to_rbg(hex_color[1:])
+    
+    # Loop until the user presses the 'q' key
     while True:
         # Read the frame from the webcam
         ret, frame = cap.read()
@@ -28,18 +36,18 @@ def detect_faces():
         
         # Convert the image to gray scale
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        
+            
         # Detect faces in the image using the pre-trained model
         faces = face_cascade.detectMultiScale(gray, scaleFactor=1.3, minNeighbors=5)
-        
         # Draw a rectangle around the faces
         for (x, y, w, h) in faces:
-            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-        
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (color), 2)
+    
         # Display the frame
         st.image(frame, caption='Face Detection using Viola-Jones Algorithm', channels='RGB')
     
         if 113 == int(ord('q')):
+            print('gets here?')
             return frame
         
     # Release the webcam and close all windows
@@ -59,20 +67,26 @@ def save_image(img):
     
 def app():
     html_title_temp = """
-    <div style="background:#025246 ;padding:10px">
+    <div style="background:#025246 ;padding:10px; margin-bottom:30px">
     <h2 style="color:white;text-align:center;">Face Detection using Viola-Jones Algorithm </h2>
     </div>
     """
     st.markdown(html_title_temp, unsafe_allow_html = True)
     
-    st.write('Press the button below to start detecting faces from your webcam')
+    # Ask user to select color to draw the rectangle around the detected faces
+    hex_color = st.color_picker('Pick a color to draw around the detected face', '#00FF00')
     
-    if st.button('Detect Faces'):
-        image = detect_faces()
+    if hex_color:
+        st.write("The current color is", hex_color)
+        st.write('Press the button below to start detecting faces from your webcam')
         
-        if st.button("Save Image", on_click=save_image(image)):
-            print('gets here?')
-            st.success('Image saved successfully!!!')
+        # Add a button to start detecting faces
+        if st.button('Detect Faces'):
+            image = detect_faces(hex_color)
+            
+            if st.button("Save Image", on_click=save_image(image)):
+                print('gets here?')
+                st.success('Image saved successfully!!!')
         
         
 if __name__ == '__main__':
